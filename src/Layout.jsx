@@ -40,8 +40,14 @@ export default function Layout({ children, currentPageName }) {
     }
   };
 
-  const handleLogout = () => {
-    base44.auth.logout();
+  const handleLogout = async () => {
+    try {
+      await base44.auth.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force reload anyway
+      window.location.href = '/';
+    }
   };
 
   // Load section visibility settings
