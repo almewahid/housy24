@@ -19,32 +19,9 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   <Layout currentPageName={currentPageName}>{children}</Layout>
   : <>{children}</>;
 
-// حماية الصفحات - للصفحات التي تحتاج تسجيل فقط
-const ProtectedRoute = ({ children, currentPageName }) => {
-  const { user, isLoadingAuth } = useAuth();
-
-  if (isLoadingAuth) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return <LayoutWrapper currentPageName={currentPageName}>{children}</LayoutWrapper>;
-};
-
-// قائمة الصفحات التي تحتاج تسجيل دخول (عدّل حسب احتياجك)
-const protectedPages = ['profile', 'settings', 'dashboard'];
-
 const AuthenticatedApp = () => {
   const { user, isLoadingAuth } = useAuth();
 
-  // عرض التحميل
   if (isLoadingAuth) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
@@ -58,11 +35,11 @@ const AuthenticatedApp = () => {
       {/* صفحات Auth */}
       <Route 
         path="/login" 
-        element={user ? <Navigate to="/Home" replace /> : <Login />} 
+        element={user ? <Navigate to="/" replace /> : <Login />} 
       />
       <Route 
         path="/register" 
-        element={user ? <Navigate to="/Home" replace /> : <Register />} 
+        element={user ? <Navigate to="/" replace /> : <Register />} 
       />
       
       {/* صفحة callback لـ OAuth */}
@@ -71,7 +48,7 @@ const AuthenticatedApp = () => {
         element={<AuthCallback />} 
       />
 
-      {/* الصفحة الرئيسية - مفتوحة للجميع */}
+      {/* الصفحة الرئيسية */}
       <Route 
         path="/" 
         element={
@@ -81,28 +58,18 @@ const AuthenticatedApp = () => {
         } 
       />
 
-      {/* باقي الصفحات - حماية حسب القائمة */}
-      {Object.entries(Pages).map(([path, Page]) => {
-        const needsAuth = protectedPages.includes(path);
-        
-        return (
-          <Route
-            key={path}
-            path={`/${path}`}
-            element={
-              needsAuth ? (
-                <ProtectedRoute currentPageName={path}>
-                  <Page />
-                </ProtectedRoute>
-              ) : (
-                <LayoutWrapper currentPageName={path}>
-                  <Page />
-                </LayoutWrapper>
-              )
-            }
-          />
-        );
-      })}
+      {/* باقي الصفحات - كلها مفتوحة */}
+      {Object.entries(Pages).map(([path, Page]) => (
+        <Route
+          key={path}
+          path={`/${path}`}
+          element={
+            <LayoutWrapper currentPageName={path}>
+              <Page />
+            </LayoutWrapper>
+          }
+        />
+      ))}
 
       {/* صفحة 404 */}
       <Route path="*" element={<PageNotFound />} />
