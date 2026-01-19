@@ -17,10 +17,6 @@ export default function Login() {
     }
   }, [isAuthenticated, navigate]);
 
-  // باقي الكود …
-}
-
-
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
