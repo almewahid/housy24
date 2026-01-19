@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import { supabase } from '@/components/api/supabaseClient';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -10,10 +11,15 @@ export default function Login() {
   const { signIn, signInWithGoogle, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  if (isAuthenticated) {
-    navigate('/');
-    return null;
-  }
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
+
+  // باقي الكود …
+}
+
 
   const handleLogin = async (e) => {
     e.preventDefault();
