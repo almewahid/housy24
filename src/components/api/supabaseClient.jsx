@@ -4,7 +4,14 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://tugrpzywepplllhmsxbk.supabase.co';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1Z3Jwenl3ZXBwbGxsaG1zeGJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzcxMTQ2MTIsImV4cCI6MjA1MjY5MDYxMn0.qBW67_nh3sWwjqBYUjqMBBNHaCOH2i6GsN_zFWN0GFY';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storageKey: 'housy24-auth-token',
+  }
+});
 
 // Helper functions for common operations
 export const supabaseHelpers = {
@@ -153,7 +160,7 @@ export const supabaseHelpers = {
   async signOut() {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
-    window.location.reload();
+    window.location.href = '/';
   },
 
   async updateProfile(updates) {
