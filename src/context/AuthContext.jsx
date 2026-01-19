@@ -100,13 +100,26 @@ export function AuthProvider({ children }) {
 
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        return { error };
-      }
+      // امسح الـ state أولاً
       setUser(null);
+      setIsLoadingAuth(true);
+      
+      // تسجيل خروج من Supabase
+      await supabase.auth.signOut();
+      
+      // امسح كل الـ storage
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      // أعد التحميل
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 100);
+      
       return { error: null };
     } catch (error) {
+      console.error('Sign out error:', error);
+      setIsLoadingAuth(false);
       return { error };
     }
   };

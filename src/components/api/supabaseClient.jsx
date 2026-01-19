@@ -15,11 +15,19 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // Helper functions for common operations
 export const supabaseHelpers = {
-  // Get current user
+  // Get current user - آمن من الأخطاء
   async getCurrentUser() {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (error) throw error;
-    return user;
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) {
+        console.log('No active session');
+        return null;
+      }
+      return user;
+    } catch (error) {
+      console.log('Auth error:', error);
+      return null;
+    }
   },
 
   // List entities with sorting (without filters)
@@ -77,7 +85,7 @@ export const supabaseHelpers = {
     return data;
   },
 
-  // Create entity
+  // Create entity - آمن من أخطاء Auth
   async create(table, data) {
     const user = await this.getCurrentUser();
     const { data: result, error } = await supabase
@@ -93,7 +101,7 @@ export const supabaseHelpers = {
     return result;
   },
 
-  // Bulk create
+  // Bulk create - آمن من أخطاء Auth
   async bulkCreate(table, dataArray) {
     const user = await this.getCurrentUser();
     const { data, error } = await supabase
@@ -160,6 +168,8 @@ export const supabaseHelpers = {
   async signOut() {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
+    localStorage.clear();
+    sessionStorage.clear();
     window.location.href = '/';
   },
 

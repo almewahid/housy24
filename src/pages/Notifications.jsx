@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { db as base44 } from '@/components/api/db';
+import React from 'react';
+import { useAuth } from '@/context/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/components/api/supabaseClient';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -10,52 +11,76 @@ import { ar } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Notifications() {
-  const [user, setUser] = useState(null);
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    loadUser();
-  }, []);
-
-  const loadUser = async () => {
-    try {
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
-    } catch (error) {
-      console.error('Error loading user:', error);
-    }
-  };
-
+  // تحميل الإشعارات - باستخدام user_email
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ['notifications', user?.email],
     queryFn: async () => {
-      if (!user) return [];
-      return base44.entities.Notification.filter({ user_email: user.email }, '-created_date');
+      if (!user?.email) return [];
+      
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_email', user.email)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
     },
-    enabled: !!user,
+    enabled: !!user?.email,
   });
 
+  // تحديد كمقروء
   const markAsReadMutation = useMutation({
-    mutationFn: (id) => base44.entities.Notification.update(id, { is_read: true }),
+    mutationFn: async (id) => {
+      if (!user?.email) return;
+      
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('id', id)
+        .eq('user_email', user.email);
+
+      if (error) throw error;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
   });
 
+  // تحديد الكل كمقروء
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
-      const unreadNotifications = notifications.filter(n => !n.is_read);
-      await Promise.all(
-        unreadNotifications.map(n => base44.entities.Notification.update(n.id, { is_read: true }))
-      );
+      if (!user?.email) return;
+      
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('user_email', user.email)
+        .eq('is_read', false);
+
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
   });
 
+  // حذف إشعار
   const deleteNotificationMutation = useMutation({
-    mutationFn: (id) => base44.entities.Notification.delete(id),
+    mutationFn: async (id) => {
+      if (!user?.email) return;
+      
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', id)
+        .eq('user_email', user.email);
+
+      if (error) throw error;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
@@ -78,6 +103,20 @@ export default function Notifications() {
   };
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  // إذا لم يكن المستخدم مسجل دخول
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Card className="border-0 shadow-lg p-8">
+          <div className="text-center">
+            <Bell className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-600">يرجى تسجيل الدخول لعرض الإشعارات</p>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -102,6 +141,7 @@ export default function Notifications() {
         {unreadCount > 0 && (
           <Button
             onClick={() => markAllAsReadMutation.mutate()}
+            disabled={markAllAsReadMutation.isPending}
             className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
           >
             <CheckCheck className="ml-2 h-5 w-5" />
@@ -157,7 +197,7 @@ export default function Notifications() {
 
                           <div className="flex items-center justify-between">
                             <span className="text-sm text-gray-500">
-                              {format(new Date(notification.created_date), 'PPP - p', { locale: ar })}
+                              {format(new Date(notification.created_at), 'PPP - p', { locale: ar })}
                             </span>
 
                             <div className="flex gap-2">
@@ -166,6 +206,7 @@ export default function Notifications() {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => markAsReadMutation.mutate(notification.id)}
+                                  disabled={markAsReadMutation.isPending}
                                   className="hover:bg-indigo-100 hover:text-indigo-600"
                                 >
                                   <Check className="ml-1 h-4 w-4" />
@@ -176,6 +217,7 @@ export default function Notifications() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => deleteNotificationMutation.mutate(notification.id)}
+                                disabled={deleteNotificationMutation.isPending}
                                 className="hover:bg-red-100 hover:text-red-600"
                               >
                                 <Trash2 className="h-4 w-4" />
