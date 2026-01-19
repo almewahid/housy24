@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { useAuth } from '@/context/AuthContext';
 import { db as base44 } from '@/components/api/db';
@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 export default function Layout({ children, currentPageName }) {
-  const { user } = useAuth(); // ✅ استخدام useAuth
+  const { user, signOut } = useAuth(); // ✅ استخدام signOut من AuthContext
+  const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -27,7 +28,7 @@ export default function Layout({ children, currentPageName }) {
   }, [user?.email]);
 
   const loadUnreadCount = async () => {
-    if (!user?.email) return; // ✅ حماية
+    if (!user?.email) return;
     
     try {
       const notifications = await base44.entities.Notification.filter({
@@ -41,13 +42,8 @@ export default function Layout({ children, currentPageName }) {
   };
 
   const handleLogout = async () => {
-    try {
-      await base44.auth.logout();
-    } catch (error) {
-      console.error('Logout error:', error);
-      // Force reload anyway
-      window.location.href = '/';
-    }
+    // ✅ استخدام signOut من AuthContext
+    await signOut();
   };
 
   // Load section visibility settings
