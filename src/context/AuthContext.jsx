@@ -14,7 +14,6 @@ export const useAuth = () => {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(false);
   const [authError, setAuthError] = useState(null);
 
   useEffect(() => {
@@ -50,22 +49,6 @@ export function AuthProvider({ children }) {
       subscription.unsubscribe();
     };
   }, []);
-
-  const checkUser = async () => {
-    setIsLoadingAuth(true);
-    try {
-      const { data } = await supabase.auth.getSession();
-      setUser(data.session?.user ?? null);
-      setAuthError(null);
-      return data.session?.user ?? null;
-    } catch (error) {
-      setUser(null);
-      setAuthError(error);
-      return null;
-    } finally {
-      setIsLoadingAuth(false);
-    }
-  };
 
   const signIn = async (email, password) => {
     try {
@@ -130,48 +113,46 @@ export function AuthProvider({ children }) {
   };
 
   const signOut = async () => {
-    setIsLoadingAuth(true);
     try {
       const { error } = await supabase.auth.signOut();
 
+      if (error) {
+        setAuthError(error);
+        return { error };
+      }
+
+      // مسح البيانات المحلية
       localStorage.removeItem('sb-auth-token');
       sessionStorage.clear();
 
       setUser(null);
       setAuthError(null);
 
-      return { error };
+      // الانتقال لصفحة تسجيل الدخول
+      window.location.href = '/login';
+
+      return { error: null };
     } catch (error) {
-      setUser(null);
       setAuthError(error);
       return { error };
-    } finally {
-      setIsLoadingAuth(false);
     }
-  };
-
-  const navigateToLogin = () => {
-    window.location.href = '/login';
   };
 
   const value = {
     user,
     loading: isLoadingAuth,
     isLoadingAuth,
-    isLoadingPublicSettings,
     authError,
     isAuthenticated: !!user,
-    checkUser,
     signIn,
     signInWithGoogle,
     signUp,
     signOut,
-    navigateToLogin,
   };
 
   return (
     <AuthContext.Provider value={value}>
-      {!isLoadingAuth && children}
+      {children}
     </AuthContext.Provider>
   );
 }
