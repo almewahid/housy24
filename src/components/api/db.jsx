@@ -88,7 +88,7 @@ export const db = {
     async me() {
       const user = await supabaseHelpers.getCurrentUser();
       
-      // ✅ إذا لم يكن هناك user، أرجع null بدلاً من رمي خطأ
+      // إذا لم يكن هناك user، أرجع null بدلاً من رمي خطأ
       if (!user) {
         return null;
       }
@@ -114,8 +114,12 @@ export const db = {
       await supabaseHelpers.updateProfile(data);
     },
     
-    logout(redirectUrl) {
-      return supabaseHelpers.signOut();
+    async logout(redirectUrl) {
+      // ✅ تسجيل خروج كامل
+      await supabase.auth.signOut();
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = '/';
     },
     
     redirectToLogin(nextUrl) {
