@@ -1,39 +1,22 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/components/api/supabaseClient';
+import { useAuth } from '@/context/AuthContext';
 
 export default function AuthCallback() {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
-    const handleCallback = async () => {
-      try {
-        // ✅ Supabase يتعامل مع الـ hash تلقائياً
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Callback error:', error);
-          navigate('/login', { replace: true });
-          return;
-        }
-
-        if (data.session) {
-          // ✅ Session موجود - انتقل للصفحة الرئيسية
-          console.log('Login successful!', data.session.user.email);
-          navigate('/Home', { replace: true });
-        } else {
-          // لا يوجد session
-          console.log('No session found');
-          navigate('/login', { replace: true });
-        }
-      } catch (error) {
-        console.error('Callback error:', error);
+    if (!loading) {
+      if (user) {
+        console.log('Login successful!', user.email);
+        navigate('/Home', { replace: true });
+      } else {
+        console.log('No user found');
         navigate('/login', { replace: true });
       }
-    };
-
-    handleCallback();
-  }, [navigate]);
+    }
+  }, [user, loading, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center" dir="rtl">
