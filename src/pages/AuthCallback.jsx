@@ -6,16 +6,28 @@ export default function AuthCallback() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // معالجة الـ token من الـ URL
     const handleCallback = async () => {
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const accessToken = hashParams.get('access_token');
-      
-      if (accessToken) {
-        // الانتقال للصفحة الرئيسية
-        navigate('/Home', { replace: true });
-      } else {
-        // في حالة الخطأ
+      try {
+        // ✅ Supabase يتعامل مع الـ hash تلقائياً
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Callback error:', error);
+          navigate('/login', { replace: true });
+          return;
+        }
+
+        if (data.session) {
+          // ✅ Session موجود - انتقل للصفحة الرئيسية
+          console.log('Login successful!', data.session.user.email);
+          navigate('/Home', { replace: true });
+        } else {
+          // لا يوجد session
+          console.log('No session found');
+          navigate('/login', { replace: true });
+        }
+      } catch (error) {
+        console.error('Callback error:', error);
         navigate('/login', { replace: true });
       }
     };
