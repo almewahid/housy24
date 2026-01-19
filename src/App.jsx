@@ -19,7 +19,7 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   <Layout currentPageName={currentPageName}>{children}</Layout>
   : <>{children}</>;
 
-// حماية الصفحات
+// حماية الصفحات - للصفحات التي تحتاج تسجيل فقط
 const ProtectedRoute = ({ children, currentPageName }) => {
   const { user, isLoadingAuth } = useAuth();
 
@@ -38,6 +38,9 @@ const ProtectedRoute = ({ children, currentPageName }) => {
   return <LayoutWrapper currentPageName={currentPageName}>{children}</LayoutWrapper>;
 };
 
+// قائمة الصفحات التي تحتاج تسجيل دخول (عدّل حسب احتياجك)
+const protectedPages = ['profile', 'settings', 'dashboard'];
+
 const AuthenticatedApp = () => {
   const { user, isLoadingAuth } = useAuth();
 
@@ -55,11 +58,11 @@ const AuthenticatedApp = () => {
       {/* صفحات Auth */}
       <Route 
         path="/login" 
-        element={user ? <Navigate to="/" replace /> : <Login />} 
+        element={user ? <Navigate to="/Home" replace /> : <Login />} 
       />
       <Route 
         path="/register" 
-        element={user ? <Navigate to="/" replace /> : <Register />} 
+        element={user ? <Navigate to="/Home" replace /> : <Register />} 
       />
       
       {/* صفحة callback لـ OAuth */}
@@ -68,28 +71,38 @@ const AuthenticatedApp = () => {
         element={<AuthCallback />} 
       />
 
-      {/* الصفحة الرئيسية */}
+      {/* الصفحة الرئيسية - مفتوحة للجميع */}
       <Route 
         path="/" 
         element={
-          <ProtectedRoute currentPageName={mainPageKey}>
+          <LayoutWrapper currentPageName={mainPageKey}>
             <MainPage />
-          </ProtectedRoute>
+          </LayoutWrapper>
         } 
       />
 
-      {/* باقي الصفحات */}
-      {Object.entries(Pages).map(([path, Page]) => (
-        <Route
-          key={path}
-          path={`/${path}`}
-          element={
-            <ProtectedRoute currentPageName={path}>
-              <Page />
-            </ProtectedRoute>
-          }
-        />
-      ))}
+      {/* باقي الصفحات - حماية حسب القائمة */}
+      {Object.entries(Pages).map(([path, Page]) => {
+        const needsAuth = protectedPages.includes(path);
+        
+        return (
+          <Route
+            key={path}
+            path={`/${path}`}
+            element={
+              needsAuth ? (
+                <ProtectedRoute currentPageName={path}>
+                  <Page />
+                </ProtectedRoute>
+              ) : (
+                <LayoutWrapper currentPageName={path}>
+                  <Page />
+                </LayoutWrapper>
+              )
+            }
+          />
+        );
+      })}
 
       {/* صفحة 404 */}
       <Route path="*" element={<PageNotFound />} />
