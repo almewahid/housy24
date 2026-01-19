@@ -100,26 +100,27 @@ export function AuthProvider({ children }) {
 
   const signOut = async () => {
     try {
-      // امسح الـ state أولاً
-      setUser(null);
-      setIsLoadingAuth(true);
+      // ✅ حذف الـ token يدوياً أولاً (اسم الـ key من Supabase)
+      localStorage.removeItem('sb-tugrpzywepplllhmsxbk-auth-token');
+      localStorage.removeItem('housy24-auth-token');
+      sessionStorage.clear();
       
       // تسجيل خروج من Supabase
       await supabase.auth.signOut();
       
-      // امسح كل الـ storage
-      localStorage.clear();
-      sessionStorage.clear();
+      // امسح الـ state
+      setUser(null);
       
-      // أعد التحميل
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 100);
+      // ✅ إعادة التحميل الكاملة (replace بدلاً من href)
+      window.location.replace('/');
       
       return { error: null };
     } catch (error) {
       console.error('Sign out error:', error);
-      setIsLoadingAuth(false);
+      // حتى لو حدث خطأ، امسح كل شيء وأعد التحميل
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.replace('/');
       return { error };
     }
   };
