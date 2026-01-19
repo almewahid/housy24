@@ -9,6 +9,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
+import AuthCallback from '@/pages/AuthCallback';
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
@@ -59,6 +60,12 @@ const AuthenticatedApp = () => {
       <Route 
         path="/register" 
         element={user ? <Navigate to="/" replace /> : <Register />} 
+      />
+      
+      {/* صفحة callback لـ OAuth */}
+      <Route 
+        path="/auth/callback" 
+        element={<AuthCallback />} 
       />
 
       {/* الصفحة الرئيسية */}
