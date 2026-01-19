@@ -13,7 +13,7 @@ export default function AuthCallback() {
       
       if (accessToken) {
         // الانتقال للصفحة الرئيسية
-        navigate('/', { replace: true });
+        navigate('/Home', { replace: true });
       } else {
         // في حالة الخطأ
         navigate('/login', { replace: true });
