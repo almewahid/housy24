@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 
 export default function Login() {
@@ -14,7 +14,7 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
+
     const result = await signIn(email, password);
 
     if (result.error) {
@@ -28,9 +28,9 @@ export default function Login() {
   const handleGoogleLogin = async () => {
     setLoading(true);
     setError('');
-    
+
     const result = await signInWithGoogle();
-    
+
     if (result.error) {
       setError(result.error.message);
       setLoading(false);
@@ -44,18 +44,16 @@ export default function Login() {
           إدارة البيت الذكي
         </h1>
         <p className="text-gray-500 text-center mb-8">تسجيل الدخول</p>
-        
+
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-4">
             {error}
           </div>
         )}
-        
+
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              البريد الإلكتروني
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">البريد الإلكتروني</label>
             <input
               type="email"
               placeholder="example@email.com"
@@ -65,22 +63,20 @@ export default function Login() {
               required
             />
           </div>
-          
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              كلمة المرور
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">كلمة المرور</label>
             <input
               type="password"
               placeholder="••••••••"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target-value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               required
             />
           </div>
-          
-          <button 
+
+          <button
             type="submit"
             disabled={loading}
             className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-3 rounded-lg font-medium hover:from-emerald-600 hover:to-teal-700 transition-all disabled:opacity-50"
