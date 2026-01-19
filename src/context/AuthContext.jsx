@@ -14,39 +14,54 @@ export const useAuth = () => {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(false);
   const [authError, setAuthError] = useState(null);
 
   useEffect(() => {
-    checkUser();
+    let mounted = true;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      // ✅ تجاهل التحديث إذا كان event هو SIGNED_OUT
-      if (_event === 'SIGNED_OUT') {
-        setUser(null);
-        setIsLoadingAuth(false);
-        return;
-      }
-
-      if (session?.user) {
-        setUser(session.user);
+    const initSession = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!mounted) return;
+        setUser(data.session?.user ?? null);
         setAuthError(null);
-      } else {
+      } catch (error) {
+        if (!mounted) return;
         setUser(null);
+        setAuthError(error);
+      } finally {
+        if (mounted) setIsLoadingAuth(false);
       }
+    };
+
+    initSession();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
+      setUser(session?.user ?? null);
       setIsLoadingAuth(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const checkUser = async () => {
+    setIsLoadingAuth(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
+      const { data } = await supabase.auth.getSession();
+      setUser(data.session?.user ?? null);
       setAuthError(null);
+      return data.session?.user ?? null;
     } catch (error) {
-      console.error('Error checking user:', error);
-      setAuthError({ type: 'auth_error', message: error.message });
+      setUser(null);
+      setAuthError(error);
+      return null;
     } finally {
       setIsLoadingAuth(false);
     }
@@ -54,17 +69,20 @@ export function AuthProvider({ children }) {
 
   const signIn = async (email, password) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ 
-        email, 
-        password 
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
-      
+
       if (error) {
+        setAuthError(error);
         return { data: null, error };
       }
-      
+
+      setAuthError(null);
       return { data, error: null };
     } catch (error) {
+      setAuthError(error);
       return { data: null, error };
     }
   };
@@ -74,85 +92,86 @@ export function AuthProvider({ children }) {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
-        }
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
       });
-      
+
       if (error) {
+        setAuthError(error);
         return { data: null, error };
       }
-      
+
+      setAuthError(null);
       return { data, error: null };
     } catch (error) {
+      setAuthError(error);
       return { data: null, error };
     }
   };
 
   const signUp = async (email, password) => {
     try {
-      const { data, error } = await supabase.auth.signUp({ 
-        email, 
-        password 
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
       });
-      
+
       if (error) {
+        setAuthError(error);
         return { data: null, error };
       }
-      
+
+      setAuthError(null);
       return { data, error: null };
     } catch (error) {
+      setAuthError(error);
       return { data: null, error };
     }
   };
 
   const signOut = async () => {
+    setIsLoadingAuth(true);
     try {
-      // ✅ تسجيل خروج من Supabase أولاً (هذا يُطلق SIGNED_OUT event)
       const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.error('Supabase signOut error:', error);
-      }
 
-      // ✅ امسح كل storage يدوياً
-      localStorage.clear();
+      localStorage.removeItem('sb-auth-token');
       sessionStorage.clear();
-      
-      // ✅ امسح الـ state
+
       setUser(null);
-      
-      // ✅ إعادة توجيه فورية بدون delay
-      window.location.href = '/';
-      
-      return { error: null };
-    } catch (error) {
-      console.error('Sign out error:', error);
-      // حتى لو حدث خطأ، امسح كل شيء
-      localStorage.clear();
-      sessionStorage.clear();
-      setUser(null);
-      window.location.href = '/';
+      setAuthError(null);
+
       return { error };
+    } catch (error) {
+      setUser(null);
+      setAuthError(error);
+      return { error };
+    } finally {
+      setIsLoadingAuth(false);
     }
+  };
+
+  const navigateToLogin = () => {
+    window.location.href = '/login';
   };
 
   const value = {
     user,
     loading: isLoadingAuth,
     isLoadingAuth,
-    isLoadingPublicSettings: false,
+    isLoadingPublicSettings,
     authError,
     isAuthenticated: !!user,
+    checkUser,
     signIn,
     signInWithGoogle,
     signUp,
     signOut,
-    navigateToLogin: () => {}
+    navigateToLogin,
   };
 
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      {!isLoadingAuth && children}
     </AuthContext.Provider>
   );
 }
