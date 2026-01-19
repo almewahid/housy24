@@ -150,7 +150,7 @@ export default function Layout({ children, currentPageName }) {
                 )}
               </Link>
             ))}
-            {user && (
+            {user ? (
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors"
@@ -158,6 +158,14 @@ export default function Layout({ children, currentPageName }) {
                 <LogOut className="h-5 w-5" />
                 <span className="font-medium">تسجيل الخروج</span>
               </button>
+            ) : (
+              <Link
+                to="/login"
+                className="w-full flex items-center gap-3 px-4 py-3 text-emerald-600 hover:bg-emerald-50 transition-colors"
+              >
+                <LogOut className="h-5 w-5 rotate-180" />
+                <span className="font-medium">تسجيل الدخول</span>
+              </Link>
             )}
           </div>
         )}
@@ -210,8 +218,8 @@ export default function Layout({ children, currentPageName }) {
             ))}
           </nav>
 
-          {/* Logout Button */}
-          {user && (
+          {/* Logout/Login Button */}
+          {user ? (
             <button
               onClick={handleLogout}
               className="flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all"
@@ -219,6 +227,14 @@ export default function Layout({ children, currentPageName }) {
               <LogOut className="h-5 w-5" />
               <span className="font-medium">تسجيل الخروج</span>
             </button>
+          ) : (
+            <Link
+              to="/login"
+              className="flex items-center gap-3 px-4 py-3 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
+            >
+              <LogOut className="h-5 w-5 rotate-180" />
+              <span className="font-medium">تسجيل الدخول</span>
+            </Link>
           )}
         </div>
       </aside>

@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import React, { useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Bell, Mail, Clock, Save, Loader2 } from "lucide-react";
+import { Bell, Mail, Save, Loader2 } from "lucide-react";
 
 export default function NotificationSettingsForm({ settings, onSave }) {
+  const { user } = useAuth();
+  
   const [formData, setFormData] = useState(settings || {
     task_reminders: true,
     task_reminder_hours: 24,
@@ -23,6 +25,7 @@ export default function NotificationSettingsForm({ settings, onSave }) {
     email_notifications: true,
     daily_summary: false
   });
+  
   const [isSaving, setIsSaving] = useState(false);
 
   const handleChange = (field, value) => {
@@ -30,9 +33,19 @@ export default function NotificationSettingsForm({ settings, onSave }) {
   };
 
   const handleSave = async () => {
+    if (!user) {
+      console.error('User not authenticated');
+      return;
+    }
+
     setIsSaving(true);
-    await onSave(formData);
-    setIsSaving(false);
+    try {
+      await onSave(formData);
+    } catch (error) {
+      console.error('Error saving settings:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const settingGroups = [
@@ -62,7 +75,7 @@ export default function NotificationSettingsForm({ settings, onSave }) {
     },
     {
       title: "تذكيرات المشاريع",
-      icon: "🔨",
+      icon: "🏗️",
       settings: [
         { key: 'project_reminders', label: 'تفعيل تذكيرات المشاريع', type: 'switch' },
         { key: 'project_reminder_days', label: 'التذكير قبل (أيام)', type: 'number', showIf: 'project_reminders' }
@@ -83,6 +96,20 @@ export default function NotificationSettingsForm({ settings, onSave }) {
       ]
     }
   ];
+
+  // إذا لم يكن المستخدم مسجل دخول
+  if (!user) {
+    return (
+      <Card className="border-0 shadow-lg">
+        <CardContent className="py-16">
+          <div className="text-center">
+            <Bell className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500">يرجى تسجيل الدخول لتعديل الإعدادات</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-0 shadow-lg">
@@ -162,13 +189,22 @@ export default function NotificationSettingsForm({ settings, onSave }) {
         </div>
 
         <div className="pt-4">
-          <Button onClick={handleSave} disabled={isSaving} className="w-full">
+          <Button 
+            onClick={handleSave} 
+            disabled={isSaving || !user} 
+            className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+          >
             {isSaving ? (
-              <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+              <>
+                <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                جاري الحفظ...
+              </>
             ) : (
-              <Save className="w-4 h-4 ml-2" />
+              <>
+                <Save className="w-4 h-4 ml-2" />
+                حفظ الإعدادات
+              </>
             )}
-            حفظ الإعدادات
           </Button>
         </div>
       </CardContent>
