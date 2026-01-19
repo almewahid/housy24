@@ -87,7 +87,11 @@ export const db = {
   auth: {
     async me() {
       const user = await supabaseHelpers.getCurrentUser();
-      if (!user) throw new Error('Not authenticated');
+      
+      // ✅ إذا لم يكن هناك user، أرجع null بدلاً من رمي خطأ
+      if (!user) {
+        return null;
+      }
       
       return {
         id: user.id,
@@ -99,8 +103,8 @@ export const db = {
     
     async isAuthenticated() {
       try {
-        await supabaseHelpers.getCurrentUser();
-        return true;
+        const user = await supabaseHelpers.getCurrentUser();
+        return !!user;
       } catch {
         return false;
       }
