@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useAuth } from '@/context/AuthContext';
 import { db as base44 } from '@/components/api/db';
 import { useQuery } from '@tanstack/react-query';
 import { CheckSquare, Clock, TrendingUp, AlertCircle, Calendar as CalendarIcon } from 'lucide-react';
@@ -8,20 +9,7 @@ import RecentTasks from '../components/dashboard/RecentTasks';
 import { motion } from 'framer-motion';
 
 export default function Dashboard() {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    loadUser();
-  }, []);
-
-  const loadUser = async () => {
-    try {
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
-    } catch (error) {
-      console.error('Error loading user:', error);
-    }
-  };
+  const { user } = useAuth(); // ✅ استخدام useAuth
 
   const { data: allTasks = [], isLoading } = useQuery({
     queryKey: ['dashboard-tasks'],
@@ -29,12 +17,12 @@ export default function Dashboard() {
   });
 
   const { data: myTasks = [] } = useQuery({
-    queryKey: ['my-tasks'],
+    queryKey: ['my-tasks', user?.email],
     queryFn: async () => {
-      if (!user) return [];
+      if (!user?.email) return []; // ✅ حماية
       return base44.entities.Task.filter({ assigned_to: user.email });
     },
-    enabled: !!user,
+    enabled: !!user?.email, // ✅ يعمل فقط مع user
   });
 
   const stats = {

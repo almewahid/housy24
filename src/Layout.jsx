@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
+import { useAuth } from '@/context/AuthContext';
 import { db as base44 } from '@/components/api/db';
 import { Bell, LayoutDashboard, Calendar, CheckSquare, LogOut, Menu, X, Home as HomeIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 export default function Layout({ children, currentPageName }) {
-  const [user, setUser] = useState(null);
+  const { user } = useAuth(); // ✅ استخدام useAuth
   const [unreadCount, setUnreadCount] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    loadUser();
-    loadUnreadCount();
+    if (user?.email) {
+      loadUnreadCount();
+    }
     
     const unsubscribe = base44.entities.Notification.subscribe((event) => {
       if (event.type === 'create') {
@@ -22,22 +24,14 @@ export default function Layout({ children, currentPageName }) {
     });
     
     return unsubscribe;
-  }, []);
-
-  const loadUser = async () => {
-    try {
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
-    } catch (error) {
-      console.error('Error loading user:', error);
-    }
-  };
+  }, [user?.email]);
 
   const loadUnreadCount = async () => {
+    if (!user?.email) return; // ✅ حماية
+    
     try {
-      const currentUser = await base44.auth.me();
       const notifications = await base44.entities.Notification.filter({
-        user_email: currentUser.email,
+        user_email: user.email,
         is_read: false
       });
       setUnreadCount(notifications.length);
