@@ -1,22 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { createPageUrl } from './utils';
-import { useAuth } from '@/context/AuthContext';
 import { db as base44 } from '@/components/api/db';
 import { Bell, LayoutDashboard, Calendar, CheckSquare, LogOut, Menu, X, Home as HomeIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 export default function Layout({ children, currentPageName }) {
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    if (user?.email) {
-      loadUnreadCount();
-    }
+    loadUser();
+    loadUnreadCount();
     
     const unsubscribe = base44.entities.Notification.subscribe((event) => {
       if (event.type === 'create') {
@@ -25,14 +22,29 @@ export default function Layout({ children, currentPageName }) {
     });
     
     return unsubscribe;
-  }, [user?.email]);
+  }, []);
+
+  const loadUser = async () => {
+    try {
+      const currentUser = await base44.auth.me();
+      setUser(currentUser);
+    } catch (error) {
+      console.error('Error loading user:', error);
+    }
+  };
 
   const loadUnreadCount = async () => {
-    if (!user?.email) return;
-    
     try {
+      const currentUser = await base44.auth.me();
+      
+      // تحقق من وجود المستخدم
+      if (!currentUser?.email) {
+        console.log('No user logged in');
+        return;
+      }
+      
       const notifications = await base44.entities.Notification.filter({
-        user_email: user.email,
+        user_email: currentUser.email,
         is_read: false
       });
       setUnreadCount(notifications.length);
@@ -41,10 +53,15 @@ export default function Layout({ children, currentPageName }) {
     }
   };
 
-  const handleLogout = async () => {
-    await signOut();
+  const handleLogout = () => {
+    base44.auth.logout();
   };
 
+  const handleLogin = () => {
+    window.location.href = createPageUrl('Login');
+  };
+
+  // Load section visibility settings
   const [sectionVisibility, setSectionVisibility] = React.useState(null);
 
   React.useEffect(() => {
@@ -159,13 +176,13 @@ export default function Layout({ children, currentPageName }) {
                 <span className="font-medium">تسجيل الخروج</span>
               </button>
             ) : (
-              <Link
-                to="/login"
-                className="w-full flex items-center gap-3 px-4 py-3 text-emerald-600 hover:bg-emerald-50 transition-colors"
+              <button
+                onClick={handleLogin}
+                className="w-full flex items-center gap-3 px-4 py-3 text-green-600 hover:bg-green-50 transition-colors"
               >
                 <LogOut className="h-5 w-5 rotate-180" />
                 <span className="font-medium">تسجيل الدخول</span>
-              </Link>
+              </button>
             )}
           </div>
         )}
@@ -228,13 +245,13 @@ export default function Layout({ children, currentPageName }) {
               <span className="font-medium">تسجيل الخروج</span>
             </button>
           ) : (
-            <Link
-              to="/login"
-              className="flex items-center gap-3 px-4 py-3 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
+            <button
+              onClick={handleLogin}
+              className="flex items-center gap-3 px-4 py-3 text-green-600 hover:bg-green-50 rounded-xl transition-all"
             >
               <LogOut className="h-5 w-5 rotate-180" />
               <span className="font-medium">تسجيل الدخول</span>
-            </Link>
+            </button>
           )}
         </div>
       </aside>
@@ -243,6 +260,39 @@ export default function Layout({ children, currentPageName }) {
       <main className="lg:mr-72 pt-16 lg:pt-0 min-h-screen">
         {children}
       </main>
+
+      {/* Footer */}
+      <footer className="lg:mr-72 bg-gradient-to-r from-slate-800 to-slate-900 text-white py-8 border-t">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <p className="text-sm text-slate-300">
+              © 2026 إدارة البيت الذكي | Smart Home Management
+            </p>
+            <nav className="flex flex-wrap items-center justify-center gap-4 md:gap-6 text-sm">
+              <Link 
+                to={createPageUrl('PrivacyPolicy')} 
+                className="text-slate-300 hover:text-white transition-colors hover:underline"
+              >
+                سياسة الخصوصية | Privacy
+              </Link>
+              <span className="text-slate-600">•</span>
+              <Link 
+                to={createPageUrl('TermsAndConditions')} 
+                className="text-slate-300 hover:text-white transition-colors hover:underline"
+              >
+                الشروط | Terms
+              </Link>
+              <span className="text-slate-600">•</span>
+              <Link 
+                to={createPageUrl('CookiesPolicy')} 
+                className="text-slate-300 hover:text-white transition-colors hover:underline"
+              >
+                ملفات تعريف الارتباط | Cookies
+              </Link>
+            </nav>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
