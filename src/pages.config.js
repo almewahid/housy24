@@ -24,6 +24,7 @@ import Tasks from './pages/Tasks';
 import TermsAndConditions from './pages/TermsAndConditions';
 import Visits from './pages/Visits';
 import Support from './pages/Support';
+import AdminSupport from './pages/AdminSupport';
 import __Layout from './Layout.jsx';
 
 
@@ -53,6 +54,7 @@ export const PAGES = {
     "Tasks": Tasks,
     "TermsAndConditions": TermsAndConditions,
     "Visits": Visits,
+    "AdminSupport": AdminSupport,
     "Support": Support
 }
 

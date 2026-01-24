@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowRight, Mail, MessageSquare, CheckCircle } from 'lucide-react';
-import { db } from '@/components/api/db';
+import { supabase } from '@/components/api/supabaseClient';
 
 export default function Support() {
   const [formData, setFormData] = useState({
@@ -41,18 +41,16 @@ export default function Support() {
     setIsSubmitting(true);
 
     try {
-      // Send support request via email integration
-      await db.integrations.Core.SendEmail({
-        to: 'support@housy24.com',
-        subject: `طلب دعم من ${formData.name}`,
-        body: `
-          الاسم: ${formData.name}
-          البريد الإلكتروني: ${formData.email}
-          
-          الرسالة:
-          ${formData.message}
-        `
+      // Save support request to Supabase
+      const { error } = await supabase.from('ContactRequest').insert({
+        name: formData.name,
+        email: formData.email,
+        message: formData.message,
+        request_type: 'support',
+        status: 'معلق'
       });
+
+      if (error) throw error;
 
       setSubmitted(true);
       setFormData({ name: '', email: '', message: '' });
@@ -226,7 +224,7 @@ export default function Support() {
                   </h3>
                   <div className="space-y-2 text-slate-600">
                     <p>📧 البريد الإلكتروني:</p>
-                    <p className="font-medium text-emerald-600">support@housy24.com</p>
+                    <p className="font-medium text-emerald-600">osakr100@gmail.com</p>
                     <p className="mt-4 text-sm">
                       نرد على جميع الرسائل خلال 24-48 ساعة
                     </p>
@@ -240,7 +238,7 @@ export default function Support() {
                   </h3>
                   <div className="space-y-2 text-slate-600">
                     <p>📧 Email:</p>
-                    <p className="font-medium text-emerald-600">support@housy24.com</p>
+                    <p className="font-medium text-emerald-600">osakr100@gmail.com</p>
                     <p className="mt-4 text-sm">
                       We respond to all messages within 24-48 hours
                     </p>

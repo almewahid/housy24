@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { createPageUrl } from './utils';
-import { db as base44 } from '@/components/api/db';
+import { supabase } from '@/components/api/supabaseClient';
 import { Bell, LayoutDashboard, Calendar, CheckSquare, LogOut, Menu, X, Home as HomeIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,56 +15,95 @@ export default function Layout({ children, currentPageName }) {
   useEffect(() => {
     loadUser();
     loadUnreadCount();
-    
-    const unsubscribe = base44.entities.Notification.subscribe((event) => {
-      if (event.type === 'create') {
-        loadUnreadCount();
-      }
-    });
-    
-    return unsubscribe;
   }, []);
 
   const loadUser = async () => {
     try {
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
+      // Get authenticated user from Supabase
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !authUser) {
+        setUser(null);
+        return;
+      }
+
+      // Get user profile with role
+      const { data: profile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', authUser.id)
+        .single();
+
+      if (profileError) {
+        console.error('Error loading profile:', profileError);
+        setUser({ ...authUser, role: 'user' });
+        return;
+      }
+
+      setUser({ 
+        ...authUser, 
+        role: profile?.role || 'user',
+        full_name: profile?.full_name,
+        email: profile?.email || authUser.email
+      });
     } catch (error) {
       console.error('Error loading user:', error);
+      setUser(null);
     }
   };
 
   const loadUnreadCount = async () => {
     try {
-      const currentUser = await base44.auth.me();
-      const notifications = await base44.entities.Notification.filter({
-        user_email: currentUser.email,
-        is_read: false
-      });
-      setUnreadCount(notifications.length);
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      
+      if (!authUser) {
+        setUnreadCount(0);
+        return;
+      }
+
+      // إذا كان عندك جدول Notifications في Supabase
+      const { data: notifications, error } = await supabase
+        .from('Notification')
+        .select('id', { count: 'exact' })
+        .eq('user_id', authUser.id)
+        .eq('is_read', false);
+
+      if (error) {
+        console.error('Error loading notifications:', error);
+        setUnreadCount(0);
+        return;
+      }
+
+      setUnreadCount(notifications?.length || 0);
     } catch (error) {
       console.error('Error loading notifications:', error);
+      setUnreadCount(0);
     }
   };
 
-  const handleLogout = () => {
-    base44.auth.logout();
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      window.location.href = createPageUrl('Home');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
-  // Load section visibility settings
-  const [sectionVisibility, setSectionVisibility] = React.useState(null);
+  // Load section visibility settings (disabled for now)
+  const [sectionVisibility, setSectionVisibility] = React.useState({ show_tasks: true, show_gamification: true });
 
-  React.useEffect(() => {
-    if (user?.email) {
-      base44.entities.SectionVisibility.filter({ user_email: user.email })
-        .then(results => {
-          if (results.length > 0) {
-            setSectionVisibility(results[0]);
-          }
-        })
-        .catch(() => {});
-    }
-  }, [user?.email]);
+  // يمكنك تفعيل هذا لاحقاً إذا أنشأت جدول section_visibility في Supabase
+  // React.useEffect(() => {
+  //   if (user?.email) {
+  //     supabase.from('section_visibility').select('*').eq('user_email', user.email).single()
+  //       .then(({ data }) => {
+  //         if (data) setSectionVisibility(data);
+  //       })
+  //       .catch(() => {});
+  //   }
+  // }, [user?.email]);
 
   const allNavItems = [
     { name: 'Home', icon: HomeIcon, label: 'الرئيسية', visible: true },
@@ -76,6 +115,11 @@ export default function Layout({ children, currentPageName }) {
   ];
 
   const navItems = allNavItems.filter(item => item.visible);
+
+  // حماية صفحة AdminSupport - الأدمن فقط
+  if (currentPageName === 'AdminSupport' && user && user.role !== 'admin') {
+    return <Navigate to={createPageUrl('Home')} replace />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50" dir="rtl">
@@ -183,45 +227,45 @@ export default function Layout({ children, currentPageName }) {
       </div>
 
       {/* Sidebar - Desktop */}
-      <aside className="hidden lg:block fixed right-0 top-0 h-screen w-72 glass-effect border-l shadow-xl z-40">
-        <div className="flex flex-col h-full p-6">
+      <aside className="hidden lg:block fixed right-0 top-0 h-screen w-72 glass-effect border-l shadow-xl z-40 overflow-hidden">
+        <div className="flex flex-col h-full p-4">
           {/* Logo */}
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+          <div className="mb-4">
+            <h1 className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
               إدارة البيت الذكي
             </h1>
-            <p className="text-sm text-gray-500 mt-1">إدارة المهام المنزلية بذكاء</p>
+            <p className="text-xs text-gray-500 mt-1">إدارة المهام المنزلية بذكاء</p>
           </div>
 
           {/* User Info */}
           {user && (
-            <div className="mb-8 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl">
+            <div className="mb-4 p-3 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl">
               <p className="text-sm font-medium text-gray-900">{user.full_name}</p>
-              <p className="text-xs text-gray-500 mt-1">{user.email}</p>
+              <p className="text-xs text-gray-500 mt-0.5 truncate">{user.email}</p>
               {user.role === 'admin' && (
-                <Badge className="mt-2 bg-purple-600">مدير</Badge>
+                <Badge className="mt-1.5 bg-purple-600 text-xs">مدير</Badge>
               )}
             </div>
           )}
 
-          {/* Navigation */}
-          <nav className="flex-1 space-y-2">
+          {/* Navigation - مع scroll */}
+          <nav className="flex-1 space-y-1 overflow-y-auto pr-1">
             {navItems.map((item) => (
               <Link
                 key={item.name}
                 to={createPageUrl(item.name)}
-                className={`nav-link flex items-center justify-between px-4 py-3 rounded-xl transition-all ${
+                className={`nav-link flex items-center justify-between px-3 py-2 rounded-xl transition-all ${
                   currentPageName === item.name
                     ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
-                    : 'text-gray-700 hover:bg-white hover:shadow-md'
+                    : 'text-gray-700 hover:bg-white hover:shadow-md dark:text-gray-200 dark:hover:bg-gray-800'
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <item.icon className="h-5 w-5" />
-                  <span className="font-medium">{item.label}</span>
+                <div className="flex items-center gap-2">
+                  <item.icon className="h-4 w-4" />
+                  <span className="font-medium text-sm">{item.label}</span>
                 </div>
                 {item.badge > 0 && (
-                  <Badge className={currentPageName === item.name ? 'bg-white text-indigo-600' : 'bg-red-500'}>
+                  <Badge className={currentPageName === item.name ? 'bg-white text-indigo-600 text-xs' : 'bg-red-500 text-xs'}>
                     {item.badge}
                   </Badge>
                 )}
@@ -233,17 +277,17 @@ export default function Layout({ children, currentPageName }) {
           {user ? (
             <button
               onClick={handleLogout}
-              className="flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all"
+              className="flex items-center gap-2 px-3 py-2 mt-2 text-red-600 hover:bg-red-50 rounded-xl transition-all text-sm"
             >
-              <LogOut className="h-5 w-5" />
+              <LogOut className="h-4 w-4" />
               <span className="font-medium">تسجيل الخروج</span>
             </button>
           ) : (
             <Link
               to={createPageUrl('Login')}
-              className="flex items-center gap-3 px-4 py-3 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
+              className="flex items-center gap-2 px-3 py-2 mt-2 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all text-sm"
             >
-              <LogOut className="h-5 w-5 transform rotate-180" />
+              <LogOut className="h-4 w-4 transform rotate-180" />
               <span className="font-medium">تسجيل الدخول</span>
             </Link>
           )}
