@@ -5,6 +5,7 @@ import { db as base44 } from '@/components/api/db';
 import { Bell, LayoutDashboard, Calendar, CheckSquare, LogOut, Menu, X, Home as HomeIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import ExternalLinkHandler from '@/components/common/ExternalLinkHandler';
 
 export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
@@ -36,13 +37,6 @@ export default function Layout({ children, currentPageName }) {
   const loadUnreadCount = async () => {
     try {
       const currentUser = await base44.auth.me();
-      
-      // تحقق من وجود المستخدم
-      if (!currentUser?.email) {
-        console.log('No user logged in');
-        return;
-      }
-      
       const notifications = await base44.entities.Notification.filter({
         user_email: currentUser.email,
         is_read: false
@@ -55,10 +49,6 @@ export default function Layout({ children, currentPageName }) {
 
   const handleLogout = () => {
     base44.auth.logout();
-  };
-
-  const handleLogin = () => {
-    window.location.href = createPageUrl('Login');
   };
 
   // Load section visibility settings
@@ -89,6 +79,9 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50" dir="rtl">
+      {/* External Link Handler for App Store Compliance */}
+      <ExternalLinkHandler />
+      
       <style>{`
         * {
           font-family: 'Tajawal', 'Segoe UI', system-ui, -apple-system, sans-serif;
@@ -167,23 +160,13 @@ export default function Layout({ children, currentPageName }) {
                 )}
               </Link>
             ))}
-            {user ? (
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors"
-              >
-                <LogOut className="h-5 w-5" />
-                <span className="font-medium">تسجيل الخروج</span>
-              </button>
-            ) : (
-              <button
-                onClick={handleLogin}
-                className="w-full flex items-center gap-3 px-4 py-3 text-green-600 hover:bg-green-50 transition-colors"
-              >
-                <LogOut className="h-5 w-5 rotate-180" />
-                <span className="font-medium">تسجيل الدخول</span>
-              </button>
-            )}
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors"
+            >
+              <LogOut className="h-5 w-5" />
+              <span className="font-medium">تسجيل الخروج</span>
+            </button>
           </div>
         )}
       </div>
@@ -235,24 +218,14 @@ export default function Layout({ children, currentPageName }) {
             ))}
           </nav>
 
-          {/* Logout/Login Button */}
-          {user ? (
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all"
-            >
-              <LogOut className="h-5 w-5" />
-              <span className="font-medium">تسجيل الخروج</span>
-            </button>
-          ) : (
-            <button
-              onClick={handleLogin}
-              className="flex items-center gap-3 px-4 py-3 text-green-600 hover:bg-green-50 rounded-xl transition-all"
-            >
-              <LogOut className="h-5 w-5 rotate-180" />
-              <span className="font-medium">تسجيل الدخول</span>
-            </button>
-          )}
+          {/* Logout Button */}
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all"
+          >
+            <LogOut className="h-5 w-5" />
+            <span className="font-medium">تسجيل الخروج</span>
+          </button>
         </div>
       </aside>
 
@@ -288,6 +261,13 @@ export default function Layout({ children, currentPageName }) {
                 className="text-slate-300 hover:text-white transition-colors hover:underline"
               >
                 ملفات تعريف الارتباط | Cookies
+              </Link>
+              <span className="text-slate-600">•</span>
+              <Link 
+                to={createPageUrl('Support')} 
+                className="text-slate-300 hover:text-white transition-colors hover:underline"
+              >
+                الدعم | Support
               </Link>
             </nav>
           </div>
