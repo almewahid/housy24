@@ -160,13 +160,24 @@ export default function Layout({ children, currentPageName }) {
                 )}
               </Link>
             ))}
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors"
-            >
-              <LogOut className="h-5 w-5" />
-              <span className="font-medium">تسجيل الخروج</span>
-            </button>
+            {user ? (
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors"
+              >
+                <LogOut className="h-5 w-5" />
+                <span className="font-medium">تسجيل الخروج</span>
+              </button>
+            ) : (
+              <Link
+                to={createPageUrl('Login')}
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full flex items-center gap-3 px-4 py-3 text-emerald-600 hover:bg-emerald-50 transition-colors"
+              >
+                <LogOut className="h-5 w-5 transform rotate-180" />
+                <span className="font-medium">تسجيل الدخول</span>
+              </Link>
+            )}
           </div>
         )}
       </div>
@@ -218,14 +229,24 @@ export default function Layout({ children, currentPageName }) {
             ))}
           </nav>
 
-          {/* Logout Button */}
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all"
-          >
-            <LogOut className="h-5 w-5" />
-            <span className="font-medium">تسجيل الخروج</span>
-          </button>
+          {/* Login/Logout Button */}
+          {user ? (
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-all"
+            >
+              <LogOut className="h-5 w-5" />
+              <span className="font-medium">تسجيل الخروج</span>
+            </button>
+          ) : (
+            <Link
+              to={createPageUrl('Login')}
+              className="flex items-center gap-3 px-4 py-3 text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
+            >
+              <LogOut className="h-5 w-5 transform rotate-180" />
+              <span className="font-medium">تسجيل الدخول</span>
+            </Link>
+          )}
         </div>
       </aside>
 
