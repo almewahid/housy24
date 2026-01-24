@@ -7,6 +7,23 @@ import { useEffect } from 'react';
  */
 export default function ExternalLinkHandler() {
   useEffect(() => {
+    // Detect iOS WebView
+    const isIOSWebView = () => {
+      const userAgent = window.navigator.userAgent.toLowerCase();
+      const isIOS = /iphone|ipad|ipod/.test(userAgent);
+      const isWebView = !/(safari|crios|fxios)/.test(userAgent) && isIOS;
+      return isWebView;
+    };
+
+    // Disable Service Worker in iOS WebView only
+    if (isIOSWebView() && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        registrations.forEach((registration) => {
+          registration.unregister();
+        });
+      });
+    }
+
     const handleClick = (e) => {
       const target = e.target.closest('a');
       if (!target) return;
@@ -23,8 +40,13 @@ export default function ExternalLinkHandler() {
         if (url.hostname !== currentDomain && (url.protocol === 'http:' || url.protocol === 'https:')) {
           e.preventDefault();
           
-          // Open in device browser
-          window.open(href, '_blank', 'noopener,noreferrer');
+          // For iOS WebView, open in device browser using location.href
+          if (isIOSWebView()) {
+            window.location.href = href;
+          } else {
+            // For web and other platforms, open in new tab
+            window.open(href, '_blank', 'noopener,noreferrer');
+          }
         }
       } catch (error) {
         // If URL parsing fails, let it proceed normally

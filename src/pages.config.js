@@ -25,6 +25,7 @@ import TermsAndConditions from './pages/TermsAndConditions';
 import Visits from './pages/Visits';
 import Support from './pages/Support';
 import AdminSupport from './pages/AdminSupport';
+import DeleteAccount from './pages/DeleteAccount';
 import __Layout from './Layout.jsx';
 
 
@@ -55,6 +56,7 @@ export const PAGES = {
     "TermsAndConditions": TermsAndConditions,
     "Visits": Visits,
     "AdminSupport": AdminSupport,
+    "DeleteAccount": DeleteAccount,
     "Support": Support
 }
 
