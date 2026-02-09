@@ -10,6 +10,7 @@ const features = [
     title: "مخزون الطعام",
     description: "تتبع المواد الغذائية والمستهلكات",
     icon: ShoppingCart,
+    image: "https://res.cloudinary.com/dufjbywcm/image/upload/v1769613617/house_Inventory_uwnzjw.png",
     color: "from-orange-400 to-rose-500",
     page: "FoodInventory"
   },
@@ -24,6 +25,7 @@ const features = [
     title: "الصيانة",
     description: "جدولة صيانة الأجهزة المنزلية",
     icon: Wrench,
+    image: "https://res.cloudinary.com/dufjbywcm/image/upload/v1769613618/Maintenance_cug9n5.png",
     color: "from-amber-400 to-orange-500",
     page: "Maintenance"
   },
@@ -38,6 +40,7 @@ const features = [
     title: "النباتات",
     description: "تذكيرات للعناية بالنباتات",
     icon: Leaf,
+    image: "https://res.cloudinary.com/dufjbywcm/image/upload/v1769613620/Plants_oltwha.png",
     color: "from-lime-400 to-green-500",
     page: "Plants"
   },
@@ -45,6 +48,7 @@ const features = [
     title: "الحيوانات الأليفة",
     description: "رعاية شاملة لحيواناتك",
     icon: PawPrint,
+    image: "https://res.cloudinary.com/dufjbywcm/image/upload/v1769613620/Pets_g1nool.png",
     color: "from-pink-500 to-purple-600",
     page: "Pets"
   },
@@ -52,6 +56,7 @@ const features = [
     title: "الأدوية",
     description: "تتبع أدوية أفراد العائلة",
     icon: Pill,
+    image: "https://res.cloudinary.com/dufjbywcm/image/upload/v1769613618/Medications_w6sgsa.png",
     color: "from-rose-400 to-pink-500",
     page: "Medications"
   },
@@ -59,6 +64,7 @@ const features = [
     title: "العائلة",
     description: "إدارة أفراد الأسرة والتواصل",
     icon: Users,
+    image: "https://res.cloudinary.com/dufjbywcm/image/upload/v1769613617/Family_btx4oi.png",
     color: "from-cyan-400 to-teal-500",
     page: "Family"
   },
@@ -73,6 +79,7 @@ const features = [
     title: "الزيارات",
     description: "تسجيل الزيارات والمشاوير",
     icon: Car,
+    image: "https://res.cloudinary.com/dufjbywcm/image/upload/v1769613622/Visits_wbxaj6.png",
     color: "from-indigo-400 to-violet-500",
     page: "Visits"
   },
@@ -80,6 +87,7 @@ const features = [
     title: "الموردين",
     description: "إدارة الموردين والمتاجر المفضلة",
     icon: Store,
+    image: "https://res.cloudinary.com/dufjbywcm/image/upload/v1769613621/Suppliers_shop_fopo1w.png",
     color: "from-emerald-400 to-green-500",
     page: "Suppliers"
   },
@@ -117,7 +125,11 @@ export default function Home() {
                   <CardContent className="p-5 text-white">
                     <div className="flex items-center justify-between mb-3">
                       <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm group-hover:scale-110 transition-transform">
-                        <feature.icon className="w-6 h-6" />
+                        {feature.image ? (
+                          <img src={feature.image} alt={feature.title} className="w-8 h-8 object-contain" />
+                        ) : (
+                          <feature.icon className="w-6 h-6" />
+                        )}
                       </div>
                       <ArrowLeft className="w-5 h-5 opacity-60 group-hover:opacity-100 group-hover:-translate-x-2 transition-all" />
                     </div>
