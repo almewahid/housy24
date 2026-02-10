@@ -18,6 +18,7 @@ const features = [
     title: "المهام",
     description: "وزع المهام بين أفراد العائلة",
     icon: ClipboardList,
+    image: "https://res.cloudinary.com/dufjbywcm/image/upload/v1770708951/Task_management_xvyto0.png",
     color: "from-pink-400 to-rose-500",
     page: "Tasks"
   },
@@ -33,6 +34,7 @@ const features = [
     title: "الجدول",
     description: "تنظيم جدول الأنشطة والمواعيد",
     icon: Calendar,
+    image: "https://res.cloudinary.com/dufjbywcm/image/upload/v1770708951/Activity_schedule_tmbkwm.png",
     color: "from-sky-400 to-blue-500",
     page: "Schedule"
   },
@@ -72,6 +74,7 @@ const features = [
     title: "المحادثة العائلية",
     description: "تواصل مع عائلتك بسهولة",
     icon: MessageCircle,
+    image: "https://res.cloudinary.com/dufjbywcm/image/upload/v1770708952/Family_conversation_flrv3f.png",
     color: "from-blue-400 to-cyan-500",
     page: "FamilyChat"
   },
@@ -95,6 +98,7 @@ const features = [
     title: "المصروفات",
     description: "تتبع وتحليل مصروفات الأسرة",
     icon: Wallet,
+    image: "https://res.cloudinary.com/dufjbywcm/image/upload/v1770708954/Household_expenses_txb4uy.png",
     color: "from-purple-500 to-violet-600",
     page: "Expenses"
   },
@@ -102,6 +106,7 @@ const features = [
     title: "مميزات التطبيق",
     description: "اكتشف كل ما يقدمه التطبيق",
     icon: Star,
+    image: "https://res.cloudinary.com/dufjbywcm/image/upload/v1770708951/Application_advantages_evpsvu.png",
     color: "from-indigo-500 to-purple-600",
     page: "Features"
   }
@@ -124,9 +129,9 @@ export default function Home() {
                 <Card className={`group h-full border-0 shadow-md hover:shadow-xl hover:scale-105 transition-all duration-300 overflow-hidden bg-gradient-to-br ${feature.color} cursor-pointer`}>
                   <CardContent className="p-5 text-white">
                     <div className="flex items-center justify-between mb-3">
-                      <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm group-hover:scale-110 transition-transform">
+                      <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm group-hover:scale-110 transition-transform overflow-hidden">
                         {feature.image ? (
-                          <img src={feature.image} alt={feature.title} className="w-8 h-8 object-contain" />
+                          <img src={feature.image} alt={feature.title} className="w-16 h-16 object-contain" />
                         ) : (
                           <feature.icon className="w-6 h-6" />
                         )}
