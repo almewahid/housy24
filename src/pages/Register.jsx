@@ -144,6 +144,14 @@ export default function Register() {
     >
       <Card className="w-full max-w-md shadow-xl">
         <CardContent className="p-8">
+          <div className="flex justify-center mb-6">
+            <img 
+              src="https://res.cloudinary.com/dufjbywcm/image/upload/v1769613617/logo_housy24_ws8az6.png" 
+              alt="Housy24 Logo" 
+              className="h-20 object-contain"
+            />
+          </div>
+          
           <h1 className="text-3xl font-bold mb-2 text-center bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
             إدارة البيت الذكي
           </h1>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from './utils';
-import { db as base44 } from '@/components/api/db';
+import { supabase } from '@/components/api/supabaseClient';
 import { Bell, LayoutDashboard, Calendar, CheckSquare, LogOut, Menu, X, Home as HomeIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,58 +11,102 @@ export default function Layout({ children, currentPageName }) {
   const [user, setUser] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadUser();
     loadUnreadCount();
-    
-    const unsubscribe = base44.entities.Notification.subscribe((event) => {
-      if (event.type === 'create') {
+
+    // الاستماع للإشعارات الجديدة (Realtime)
+    const channel = supabase
+      .channel('notifications-changes')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, () => {
+        loadUnreadCount();
+      })
+      .subscribe();
+
+    // الاستماع لتغييرات Auth
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setUnreadCount(0);
+      } else if (event === 'SIGNED_IN') {
+        loadUser();
         loadUnreadCount();
       }
     });
-    
-    return unsubscribe;
+
+    return () => {
+      channel.unsubscribe();
+      subscription.unsubscribe();
+    };
   }, []);
 
   const loadUser = async () => {
     try {
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser) {
+        // جلب بيانات إضافية من user_profiles إن وجد
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('auth_id', authUser.id)
+          .single();
+
+        setUser({
+          id: authUser.id,
+          email: authUser.email,
+          full_name: profile?.full_name || authUser.user_metadata?.full_name || authUser.email,
+          role: profile?.role || 'user',
+        });
+      } else {
+        setUser(null);
+      }
     } catch (error) {
       console.error('Error loading user:', error);
-      setUser(null); // No user logged in
+      setUser(null);
     }
   };
 
   const loadUnreadCount = async () => {
     try {
-      const currentUser = await base44.auth.me();
-      const notifications = await base44.entities.Notification.filter({
-        user_email: currentUser.email,
-        is_read: false
-      });
-      setUnreadCount(notifications.length);
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) { setUnreadCount(0); return; }
+
+      const { count } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_email', authUser.email)
+        .eq('is_read', false);
+
+      setUnreadCount(count || 0);
     } catch (error) {
       console.error('Error loading notifications:', error);
-      setUnreadCount(0); // No notifications if not logged in
+      setUnreadCount(0);
     }
   };
 
-  const handleLogout = () => {
-    base44.auth.logout();
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate(createPageUrl('Home'));
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
-  // Load section visibility settings
-  const [sectionVisibility, setSectionVisibility] = React.useState(null);
+  // إعدادات إظهار/إخفاء الأقسام
+  const [sectionVisibility, setSectionVisibility] = useState({ show_tasks: true, show_gamification: true });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (user?.email) {
-      base44.entities.SectionVisibility.filter({ user_email: user.email })
-        .then(results => {
-          if (results.length > 0) {
-            setSectionVisibility(results[0]);
-          }
+      supabase
+        .from('section_visibility')
+        .select('*')
+        .eq('user_email', user.email)
+        .single()
+        .then(({ data }) => {
+          if (data) setSectionVisibility(data);
         })
         .catch(() => {});
     }
@@ -128,9 +172,16 @@ export default function Layout({ children, currentPageName }) {
           >
             {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </Button>
-          <h1 className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-            إدارة البيت الذكي
-          </h1>
+          <div className="flex items-center gap-2">
+            <img 
+              src="https://res.cloudinary.com/dufjbywcm/image/upload/v1769613617/logo_housy24_ws8az6.png" 
+              alt="Housy24" 
+              className="h-8 object-contain"
+            />
+            <h1 className="text-lg font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+              Housy24
+            </h1>
+          </div>
           <div className="relative">
             <Bell className="h-6 w-6 text-gray-600" />
             {unreadCount > 0 && (
@@ -189,6 +240,13 @@ export default function Layout({ children, currentPageName }) {
         <div className="flex flex-col h-full p-6">
           {/* Logo */}
           <div className="mb-8">
+            <div className="flex justify-center mb-4">
+              <img 
+                src="https://res.cloudinary.com/dufjbywcm/image/upload/v1769613617/logo_housy24_ws8az6.png" 
+                alt="Housy24 Logo" 
+                className="h-16 object-contain"
+              />
+            </div>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
               إدارة البيت الذكي
             </h1>
